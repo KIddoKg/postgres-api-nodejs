@@ -25,6 +25,10 @@
           <el-icon><User /></el-icon>
           <span>Quản lý người dùng</span>
         </el-menu-item>
+        <el-menu-item v-if="auth.isAdmin" index="/migration">
+          <el-icon><Switch /></el-icon>
+          <span>Migration DB</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 

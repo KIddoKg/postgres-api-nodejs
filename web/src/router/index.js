@@ -40,6 +40,12 @@ const routes = [
         component: () => import('../views/users/UsersView.vue'),
         meta: { requiresAdmin: true },
       },
+      {
+        path: 'migration',
+        name: 'Migration',
+        component: () => import('../views/migration/MigrationView.vue'),
+        meta: { requiresAdmin: true },
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
