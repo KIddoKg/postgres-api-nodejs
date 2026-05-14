@@ -196,6 +196,92 @@ docker compose up --build web -d
 
 ---
 
+## Migration SQL Server → PostgreSQL
+
+### Kiến trúc dual-database
+
+```
+DB_MODE=sqlserver  →  chỉ đọc SQL Server (trước khi migrate)
+DB_MODE=dual       →  đọc Postgres trước, fallback SQL Server (đang migrate)
+DB_MODE=postgres   →  chỉ đọc PostgreSQL (hoàn tất migrate)
+```
+
+### Các bước thực hiện
+
+**Bước 1 — Cấu hình kết nối SQL Server** trong file `.env`:
+```env
+MSSQL_HOST=your-sqlserver-host
+MSSQL_PORT=1433
+MSSQL_DB=your_database_name
+MSSQL_USER=sa
+MSSQL_PASSWORD=your_password
+MSSQL_ENCRYPT=false
+MSSQL_TRUST_CERT=true
+
+DB_MODE=dual
+```
+
+**Bước 2 — Chỉnh mapping tên bảng/cột** trong file:
+`api/src/migrations/syncFromSqlServer.js` → section `MAPPING`
+
+Sửa `mssqlTable` và `columns` cho khớp với schema SQL Server thực tế của bạn.
+
+**Bước 3 — Rebuild và chạy sync:**
+```bash
+# Rebuild API để cài mssql package
+docker compose up --build api -d
+
+# Sync toàn bộ dữ liệu SQL Server → Postgres
+docker compose exec api npm run sync
+
+# Hoặc sync từng bảng riêng
+docker compose exec api npm run sync:provinces
+docker compose exec api npm run sync:districts
+docker compose exec api npm run sync:wards
+```
+
+**Bước 4 — Kiểm tra tiến độ:**
+```bash
+# Qua API (cần token admin)
+GET /api/migration/status
+
+# Hoặc xem trực tiếp DB
+docker compose exec db psql -U admin -d vn_provinces -c "SELECT COUNT(*) FROM provinces;"
+```
+
+**Bước 5 — Chuyển hẳn sang Postgres** khi dữ liệu đã đủ:
+```env
+# Sửa trong .env
+DB_MODE=postgres
+```
+```bash
+docker compose up -d api
+```
+
+**Bước 6 — Xóa cấu hình SQL Server** (tuỳ chọn) sau khi xác nhận hệ thống ổn định:
+- Xoá các biến `MSSQL_*` trong `.env`
+- Xoá package `mssql` khỏi `package.json`
+
+### Lưu ý mapping bảng
+
+File `api/src/migrations/syncFromSqlServer.js` có section `MAPPING` cần sửa cho đúng với schema SQL Server của bạn:
+
+```js
+const MAPPING = {
+  provinces: {
+    mssqlTable: 'Provinces',     // ← tên bảng SQL Server
+    columns: {
+      code: 'ProvinceCode',      // ← postgres_col: 'SqlServerColumn'
+      name: 'ProvinceName',
+      // ...
+    },
+  },
+  // ...
+};
+```
+
+---
+
 ## API Reference
 
 Tất cả response đều theo chuẩn:

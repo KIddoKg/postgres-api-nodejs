@@ -15,13 +15,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check (public)
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const { DB_MODE } = require('./config/dbStrategy');
+  res.json({ status: 'ok', db_mode: DB_MODE, timestamp: new Date().toISOString() });
 });
 
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/provinces', require('./routes/province.routes'));
 app.use('/api/users', require('./routes/user.routes'));
+app.use('/api/migration', require('./routes/migration.routes'));
 
 // 404 & error handler
 app.use(notFound);

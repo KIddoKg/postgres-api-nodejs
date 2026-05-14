@@ -7,7 +7,11 @@
     "dev": "nodemon src/index.js",
     "migrate": "node src/migrations/run.js",
     "seed": "node src/seeders/run.js",
-    "setup": "node src/migrations/run.js && node src/seeders/run.js"
+    "setup": "node src/migrations/run.js && node src/seeders/run.js",
+    "sync": "node src/migrations/syncFromSqlServer.js",
+    "sync:provinces": "node src/migrations/syncFromSqlServer.js provinces",
+    "sync:districts": "node src/migrations/syncFromSqlServer.js districts",
+    "sync:wards": "node src/migrations/syncFromSqlServer.js wards"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -18,7 +22,8 @@
     "pg": "^8.11.5",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.3",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "mssql": "^11.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
