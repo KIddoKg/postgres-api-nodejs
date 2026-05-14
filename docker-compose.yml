@@ -19,6 +19,46 @@ services:
       timeout: 5s
       retries: 5
 
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: vn_provinces_sqlserver
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_PASSWORD}
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - ./sqlserver/init:/docker-entrypoint-initdb.d
+    networks:
+      - app_net
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ${MSSQL_PASSWORD} -Q 'SELECT 1' -C -b -o /dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  mssql-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: vn_provinces_mssql_init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_PASSWORD}
+    volumes:
+      - ./sqlserver/init:/init
+    networks:
+      - app_net
+    command: >
+      bash -c "/opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P $$MSSQL_SA_PASSWORD -C -i /init/01_create_db.sql &&
+               /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P $$MSSQL_SA_PASSWORD -C -d VnProvincesLegacy -i /init/02_seed_data.sql &&
+               echo '✅ SQL Server initialized'"
+    restart: on-failure
+
   api:
     build:
       context: ./api
@@ -30,6 +70,8 @@ services:
       - "3000:3000"
     depends_on:
       db:
+        condition: service_healthy
+      sqlserver:
         condition: service_healthy
     networks:
       - app_net
@@ -67,6 +109,7 @@ services:
 
 volumes:
   pg_data:
+  mssql_data:
 
 networks:
   app_net:
