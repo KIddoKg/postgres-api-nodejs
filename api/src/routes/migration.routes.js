@@ -161,9 +161,26 @@ router.post('/sync', authenticate, requireAdmin, async (req, res) => {
       log(`✅ Wards hoàn thành: ${records.length} bản ghi`);
     };
 
-    if (target === 'all' || target === 'provinces') await syncProvinces();
-    if (target === 'all' || target === 'districts') await syncDistricts();
-    if (target === 'all' || target === 'wards')     await syncWards();
+    // Luôn sync bảng cha trước để tránh FK violation
+    // districts cần provinces, wards cần districts
+    if (target === 'all' || target === 'provinces') {
+      await syncProvinces();
+    }
+    if (target === 'all' || target === 'districts') {
+      if (target === 'districts') {
+        log('ℹ️  Auto sync Provinces trước để đảm bảo FK...');
+        await syncProvinces();
+      }
+      await syncDistricts();
+    }
+    if (target === 'all' || target === 'wards') {
+      if (target === 'wards') {
+        log('ℹ️  Auto sync Provinces + Districts trước để đảm bảo FK...');
+        await syncProvinces();
+        await syncDistricts();
+      }
+      await syncWards();
+    }
 
     log('🎉 Sync hoàn tất!');
     done(stats);

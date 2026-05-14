@@ -158,13 +158,23 @@ const main = async () => {
 
     const stats = {};
 
+    // Luôn sync bảng cha trước để tránh FK violation
     if (!target || target === 'provinces') {
       stats.provinces = await syncProvinces(pool);
     }
     if (!target || target === 'districts') {
+      if (target === 'districts') {
+        log('ℹ️  Auto sync Provinces trước để đảm bảo FK...');
+        await syncProvinces(pool);
+      }
       stats.districts = await syncDistricts(pool);
     }
     if (!target || target === 'wards') {
+      if (target === 'wards') {
+        log('ℹ️  Auto sync Provinces + Districts trước để đảm bảo FK...');
+        await syncProvinces(pool);
+        await syncDistricts(pool);
+      }
       stats.wards = await syncWards(pool);
     }
 

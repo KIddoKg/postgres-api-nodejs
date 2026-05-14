@@ -110,6 +110,12 @@
         <span style="font-weight:600;">Đồng bộ dữ liệu</span>
       </template>
 
+      <el-alert
+        type="info" :closable="false" style="margin-bottom:14px;"
+        title="Lưu ý thứ tự sync"
+        description="Wards phụ thuộc Districts (FK), Districts phụ thuộc Provinces. Khi sync riêng lẻ, hệ thống tự động sync bảng cha trước."
+      />
+
       <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
         <el-button
           type="primary" :icon="Upload"
